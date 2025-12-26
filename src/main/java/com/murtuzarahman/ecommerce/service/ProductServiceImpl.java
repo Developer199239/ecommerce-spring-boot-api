@@ -4,12 +4,14 @@ import com.murtuzarahman.ecommerce.exceptions.ResourceNotFoundException;
 import com.murtuzarahman.ecommerce.model.Category;
 import com.murtuzarahman.ecommerce.model.Product;
 import com.murtuzarahman.ecommerce.payload.ProductDTO;
+import com.murtuzarahman.ecommerce.payload.ProductResponse;
 import com.murtuzarahman.ecommerce.repositories.CategoryRepository;
 import com.murtuzarahman.ecommerce.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.ModelMap;
+
+import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService{
@@ -34,5 +36,68 @@ public class ProductServiceImpl implements ProductService{
         product.setSpecialPrice(specialPrice);
         Product savedProduct = productRepository.save(product);
         return modelMapper.map(savedProduct, ProductDTO.class);
+    }
+
+    @Override
+    public ProductResponse getAllProducts() {
+        List<Product> products = productRepository.findAll();
+        List<ProductDTO> productDTOS = products.stream()
+                .map(product -> modelMapper.map(product, ProductDTO.class))
+                .toList();
+
+        ProductResponse productResponse = new ProductResponse();
+        productResponse.setContent(productDTOS);
+        return productResponse;
+    }
+
+    @Override
+    public ProductResponse searchByCategory(Long categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "categoryId", categoryId));
+        List<Product> products = productRepository.findByCategoryOrderByPriceAsc(category);
+        List<ProductDTO> productDTOS = products.stream()
+                .map(product -> modelMapper.map(product, ProductDTO.class))
+                .toList();
+
+        ProductResponse productResponse = new ProductResponse();
+        productResponse.setContent(productDTOS);
+        return productResponse;
+    }
+
+    @Override
+    public ProductResponse searchProductByKeyword(String keyword) {
+        List<Product> products = productRepository.findByProductNameLikeIgnoreCase("%"+keyword+"%");
+        List<ProductDTO> productDTOS = products.stream()
+                .map(product -> modelMapper.map(product, ProductDTO.class))
+                .toList();
+
+        ProductResponse productResponse = new ProductResponse();
+        productResponse.setContent(productDTOS);
+        return productResponse;
+    }
+
+    @Override
+    public ProductDTO updateProduct(Long productId, ProductDTO productDTO) {
+        Product productFromDb = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+
+        productFromDb.setProductName(productDTO.getProductName());
+        productFromDb.setDescription(productDTO.getDescription());
+        productFromDb.setQuantity(productDTO.getQuantity());
+        productFromDb.setPrice(productDTO.getPrice());
+        productFromDb.setDiscount(productDTO.getDiscount());
+        double specialPrice = productDTO.getPrice() - ((productDTO.getDiscount() * 0.01) * productDTO.getPrice());
+        productFromDb.setSpecialPrice(specialPrice);
+
+        Product savedProduct = productRepository.save(productFromDb);
+        return modelMapper.map(savedProduct, ProductDTO.class);
+    }
+
+    @Override
+    public ProductDTO deleteProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+        productRepository.delete(product);
+        return modelMapper.map(product, ProductDTO.class);
     }
 }
