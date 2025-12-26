@@ -2,6 +2,9 @@ package com.murtuzarahman.ecommerce.service;
 
 import com.murtuzarahman.ecommerce.payload.ProductDTO;
 import com.murtuzarahman.ecommerce.payload.ProductResponse;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 public interface ProductService {
     ProductDTO addProduct(Long categoryId, ProductDTO productDTO);
@@ -10,4 +13,5 @@ public interface ProductService {
     ProductResponse searchProductByKeyword(String keyword);
     ProductDTO updateProduct(Long productId, ProductDTO productDTO);
     ProductDTO deleteProduct(Long productId);
+    ProductDTO updateProductImage(Long productId, MultipartFile image) throws IOException;
 }
